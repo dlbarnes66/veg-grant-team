@@ -36,7 +36,7 @@ exports.handler = async (event) => {
   const userPrompt = `${input || "Proceed using the workspace context."}${context}`;
 
   const reqBody = {
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 3000,
     system: def.system,
     messages: [{ role: "user", content: userPrompt }],
