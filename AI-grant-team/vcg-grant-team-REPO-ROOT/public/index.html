@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VCG Foundation — AI Grant Team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14130f;--paper:#f4efe4;--paper-2:#ece4d3;
+    --olive:#3a4a2c;--olive-deep:#26331c;--brass:#a8801f;--brass-bright:#cd9f2e;--rust:#8a3b22;
+    --line:rgba(20,19,15,.14);--shadow:0 1px 0 rgba(20,19,15,.05),0 16px 36px -24px rgba(20,19,15,.5);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(120% 80% at 100% 0%,rgba(168,128,31,.10),transparent 60%),var(--paper);
+    color:var(--ink);font-family:"Newsreader",Georgia,serif;font-size:16px;line-height:1.5;min-height:100vh}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 22px 80px}
+  header.mast{border-bottom:3px double var(--ink);padding:28px 0 16px;margin-bottom:18px}
+  .eyebrow{font-family:"Fraunces";font-weight:600;letter-spacing:.32em;text-transform:uppercase;font-size:11px;color:var(--rust)}
+  .mast h1{font-family:"Fraunces";font-weight:900;font-size:clamp(30px,5.5vw,54px);line-height:.95;margin:6px 0 4px;letter-spacing:-.02em}
+  .mast .sub{font-style:italic;color:#4a463c}
+  .layout{display:grid;grid-template-columns:300px 1fr;gap:24px}
+  @media(max-width:880px){.layout{grid-template-columns:1fr}}
+
+  /* workspace panel */
+  .ws{position:sticky;top:14px;align-self:start;border:1px solid var(--line);background:#fbf8f0;border-radius:4px;padding:18px;box-shadow:var(--shadow)}
+  .ws h2{font-family:"Fraunces";font-weight:900;font-size:18px;margin:0 0 12px}
+  .ws label{font-family:"Fraunces";font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#4a463c;display:block;margin:10px 0 4px}
+  input,textarea{width:100%;font-family:"Newsreader",serif;font-size:15px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:3px;padding:9px 11px}
+  textarea{resize:vertical;min-height:60px}
+  input:focus,textarea:focus{outline:2px solid var(--brass);border-color:var(--brass)}
+  .wsstat{margin-top:14px;font-size:13px}
+  .wsstat .item{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted var(--line)}
+  .dot{width:9px;height:9px;border-radius:50%;background:#cfc6b2;display:inline-block;margin-right:7px;vertical-align:0}
+  .dot.on{background:var(--olive)}
+  .runall{margin-top:16px;width:100%;font-family:"Fraunces";font-weight:600;cursor:pointer;background:var(--olive-deep);color:#f4efe4;border:none;border-radius:3px;padding:12px;font-size:15px;transition:.18s}
+  .runall:hover{background:var(--olive)}
+  .runall:disabled{opacity:.5;cursor:wait}
+
+  /* agents grid */
+  .agents{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+  .agent{border:1px solid var(--line);border-top:4px solid var(--brass);background:#fbf8f0;border-radius:4px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column}
+  .agent .head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .agent .num{font-family:"Fraunces";font-weight:900;font-size:13px;color:var(--brass)}
+  .agent h3{font-family:"Fraunces";font-weight:600;font-size:19px;margin:2px 0 2px}
+  .agent .blurb{font-size:13.5px;font-style:italic;color:#6a6457;margin-bottom:10px}
+  .agent .web{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-family:"Fraunces";font-weight:600;color:var(--olive);border:1px solid var(--olive);border-radius:99px;padding:1px 7px}
+  .run{font-family:"Fraunces";font-weight:600;cursor:pointer;background:var(--paper-2);border:1px solid var(--line);border-radius:3px;padding:8px 14px;font-size:13px;transition:.15s;align-self:flex-start}
+  .run:hover{background:var(--brass);border-color:var(--brass)}
+  .run:disabled{opacity:.5;cursor:wait}
+  .out{margin-top:12px;font-size:14px;line-height:1.55;white-space:pre-wrap;border-top:1px dotted var(--line);padding-top:10px;max-height:320px;overflow:auto}
+  .out:empty{display:none}
+  .copy{font-family:"Fraunces";font-weight:600;font-size:11px;cursor:pointer;background:none;border:1px solid var(--line);border-radius:3px;padding:3px 9px;margin-top:8px;display:none}
+  .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(20,19,15,.2);border-top-color:var(--olive);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-1px;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .err{color:var(--rust);font-size:13px;margin-top:8px}
+  .verdict{font-family:"Fraunces";font-weight:600;font-size:13px;padding:3px 9px;border-radius:99px;display:inline-block;margin-bottom:6px}
+  .v-good{background:#dde9d0;color:var(--olive-deep)}
+  .v-mid{background:#f0e6c8;color:#7a5e12}
+  .v-bad{background:#f3ddd2;color:var(--rust)}
+  footer{border-top:1px solid var(--line);margin-top:42px;padding-top:16px;font-size:13px;color:#6a6457;font-style:italic}
+
+  /* tabs */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin:0 0 22px;flex-wrap:wrap}
+  .tab{font-family:"Fraunces";font-weight:600;font-size:14px;letter-spacing:.03em;text-transform:uppercase;padding:12px 20px;cursor:pointer;border:none;background:none;color:#6a6457;border-bottom:3px solid transparent;margin-bottom:-1px;transition:.18s}
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:var(--olive-deep);border-bottom-color:var(--brass)}
+  .panel{display:none}.panel.active{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* metric tracker */
+  .metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:20px}
+  .metric{border:1px solid var(--line);border-top:4px solid var(--olive);background:#fbf8f0;border-radius:4px;padding:16px;box-shadow:var(--shadow)}
+  .metric .mlabel{font-family:"Fraunces";font-weight:600;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#4a463c}
+  .metric .mdesc{font-size:12.5px;font-style:italic;color:#6a6457;margin:2px 0 10px}
+  .metric input{font-family:"Fraunces";font-weight:900;font-size:26px;color:var(--olive-deep);border:none;border-bottom:2px solid var(--line);border-radius:0;background:none;padding:2px 0;width:100%}
+  .metric input:focus{outline:none;border-bottom-color:var(--brass)}
+  .metric .unit{font-size:13px;color:#6a6457;font-family:"Newsreader"}
+  .periodrow{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px}
+  .periodrow .field{display:flex;flex-direction:column;gap:5px}
+  .periodrow select,.periodrow input{font-family:"Newsreader",serif;font-size:15px;background:#fff;border:1px solid var(--line);border-radius:3px;padding:9px 11px}
+  .bigbtn{font-family:"Fraunces";font-weight:600;cursor:pointer;background:var(--olive-deep);color:#f4efe4;border:none;border-radius:3px;padding:11px 22px;font-size:15px;transition:.18s}
+  .bigbtn:hover{background:var(--olive)}.bigbtn:disabled{opacity:.5;cursor:wait}
+  .report-out{border:1px solid var(--line);border-top:4px solid var(--brass);background:#fbf8f0;border-radius:4px;padding:24px;margin-top:18px;white-space:pre-wrap;font-size:16px;line-height:1.62;box-shadow:var(--shadow)}
+  .report-out:empty{display:none}
+  .prospect{border:1px solid var(--line);border-left:4px solid var(--brass);background:#fbf8f0;border-radius:3px;padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .prospect h3{font-family:"Fraunces";font-weight:600;font-size:19px;margin:0 0 2px}
+  .prospect .ptype{font-family:"Fraunces";font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--rust)}
+  .prospect p{margin:8px 0;font-size:15px;color:#3a372f}
+  .prospect .cap{font-family:"Fraunces";font-weight:600;font-size:13px;background:var(--paper-2);border:1px solid var(--line);border-radius:99px;padding:3px 11px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">VCG Foundation &middot; Veterans Collaborative</div>
+    <h1>AI Grant Team</h1>
+    <div class="sub">Specialized agents — sharing one workspace — to win and report funding for homeless &amp; at-risk veterans.</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="team">Grant Team</button>
+    <button class="tab" data-tab="impact">Impact Tracker</button>
+    <button class="tab" data-tab="fund">Fundraising</button>
+  </div>
+
+  <section class="panel active" id="team">
+  <div class="layout">
+    <!-- Workspace -->
+    <aside class="ws">
+      <h2>Grant Workspace</h2>
+      <label>Grant / Program</label>
+      <input id="w_grant" placeholder="e.g. SSVF">
+      <label>Funder</label>
+      <input id="w_funder" placeholder="e.g. U.S. Dept. of Veterans Affairs">
+      <label>Focus / Priorities</label>
+      <textarea id="w_focus" placeholder="What this funder cares about"></textarea>
+      <label>Search keywords (Scout)</label>
+      <input id="w_keywords" placeholder="veteran homelessness housing grant">
+
+      <div class="wsstat" id="wsstat"></div>
+      <button class="runall" id="runAll">▶ Run Full Pipeline</button>
+      <div class="err" id="pipeErr"></div>
+    </aside>
+
+    <!-- Agents -->
+    <main>
+      <div class="agents" id="agents"></div>
+    </main>
+  </div>
+  </section>
+
+  <!-- MODULE 5: IMPACT TRACKER -->
+  <section class="panel" id="impact">
+    <p style="font-style:italic;color:#6a6457;max-width:640px">Enter the period's tracked outcomes. The Impact Report Writer uses these exact figures — no invented numbers. Data is saved in this browser.</p>
+    <div class="metrics" id="metricGrid"></div>
+    <div class="periodrow">
+      <div class="field"><label style="font-family:'Fraunces';font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#4a463c">Cadence</label>
+        <select id="cadence"><option>Quarterly</option><option>Annual</option></select></div>
+      <div class="field"><label style="font-family:'Fraunces';font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#4a463c">Period label</label>
+        <input id="periodLabel" placeholder="e.g. Q2 2026" style="min-width:160px"></div>
+      <button class="bigbtn" id="genReport">Generate Impact Report</button>
+    </div>
+    <div class="err" id="reportErr"></div>
+    <div class="report-out" id="reportOut"></div>
+    <button class="copy" id="copyReport" style="display:none">Copy report</button>
+  </section>
+
+  <!-- MODULE 6: FUNDRAISING -->
+  <section class="panel" id="fund">
+    <p style="font-style:italic;color:#6a6457;max-width:680px">Beyond grants — the Prospector finds corporate sponsors, major donors, family offices, impact investors, and donor-advised funds with documented interest in veterans and housing.</p>
+    <div class="periodrow">
+      <div class="field" style="flex:1;min-width:240px"><label style="font-family:'Fraunces';font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#4a463c">Prospect focus</label>
+        <input id="fundFocus" placeholder="e.g. corporate sponsors for veteran housing in the Southeast" style="width:100%"></div>
+      <button class="bigbtn" id="findProspects">Find Prospects</button>
+    </div>
+    <div class="err" id="fundErr"></div>
+    <div id="prospectList"></div>
+  </section>
+
+  <footer>VCG Foundation &middot; vcgfoundation.vet — Agents draft and assist; verify every figure, date, and eligibility detail before submission. Backend runs on Netlify Functions with the API key stored server-side.</footer>
+</div>
+
+<script>
+// Agent registry (mirrors agents.js). Order defines the pipeline.
+const AGENTS = [
+  {key:"scout",       n:"01", label:"Grant Scout",  blurb:"Searches for grant opportunities", web:true,  stores:"grant"},
+  {key:"eligibility", n:"02", label:"Eligibility",  blurb:"Determines qualification & fit",    web:false, stores:"eligibility"},
+  {key:"research",    n:"03", label:"Research",      blurb:"Gathers supporting data & evidence",web:true,  stores:"research"},
+  {key:"impact",      n:"04", label:"Impact",        blurb:"Generates outcomes & KPIs",         web:false, stores:"impact"},
+  {key:"proposal",    n:"05", label:"Proposal",      blurb:"Writes the grant narrative",        web:false, stores:"proposal"},
+  {key:"budget",      n:"06", label:"Budget",        blurb:"Builds the budget",                 web:false, stores:"budget"},
+  {key:"compliance",  n:"07", label:"Compliance",    blurb:"Checks requirements",               web:false, stores:null},
+  {key:"submission",  n:"08", label:"Submission",    blurb:"Tracks deadlines & submission",     web:false, stores:null},
+  {key:"reporting",   n:"09", label:"Reporting",     blurb:"Produces quarterly reports",        web:false, stores:null},
+];
+
+const workspace = {}; // grant, eligibility, research, impact, proposal, budget
+
+function gatherGrant(){
+  return {
+    name: document.getElementById('w_grant').value,
+    funder: document.getElementById('w_funder').value,
+    focus: document.getElementById('w_focus').value,
+  };
+}
+
+function renderStat(){
+  const keys=[["grant","Grant selected"],["eligibility","Eligibility checked"],["research","Research gathered"],["impact","KPIs defined"],["proposal","Proposal drafted"],["budget","Budget built"]];
+  document.getElementById('wsstat').innerHTML = keys.map(([k,lbl])=>
+    `<div class="item"><span><span class="dot ${workspace[k]?'on':''}"></span>${lbl}</span></div>`).join('');
+}
+
+function agentCard(a){
+  return `<div class="agent" id="card-${a.key}">
+    <div class="head">
+      <div>
+        <div class="num">AGENT ${a.n}</div>
+        <h3>${a.label}</h3>
+      </div>
+      ${a.web?'<span class="web">web</span>':''}
+    </div>
+    <div class="blurb">${a.blurb}</div>
+    <button class="run" data-agent="${a.key}">Run agent</button>
+    <div class="out" id="out-${a.key}"></div>
+    <button class="copy" id="copy-${a.key}">Copy</button>
+  </div>`;
+}
+
+document.getElementById('agents').innerHTML = AGENTS.map(agentCard).join('');
+renderStat();
+
+function inputFor(key){
+  if(key==='scout'){
+    const kw=document.getElementById('w_keywords').value || document.getElementById('w_focus').value || 'veteran housing homelessness';
+    return `Find grant opportunities for: ${kw}`;
+  }
+  return "Proceed using the selected grant and the shared workspace context.";
+}
+
+function setVerdictBadge(key, parsed){
+  if(key==='eligibility' && parsed && parsed.verdict){
+    const cls = parsed.verdict.includes('Likely Eligible')?'v-good':parsed.verdict.includes('Ineligible')?'v-bad':'v-mid';
+    return `<span class="verdict ${cls}">${parsed.verdict}${parsed.score!=null?' · '+parsed.score+'/100':''}</span>\n`;
+  }
+  return '';
+}
+
+function prettyParsed(key,parsed,text){
+  if(!parsed) return text;
+  if(key==='scout' && Array.isArray(parsed)){
+    if(!parsed.length) return 'No opportunities found. Try different keywords.';
+    return parsed.map(g=>`• ${g.name||'(unnamed)'} — ${g.funder||''}\n  ${g.focus||''}\n  ${g.deadline?('Deadline: '+g.deadline+'  '):''}${g.url||''}`).join('\n\n');
+  }
+  return setVerdictBadge(key,parsed) + text;
+}
+
+async function runAgent(key){
+  const a=AGENTS.find(x=>x.key===key);
+  const btn=document.querySelector(`[data-agent="${key}"]`);
+  const out=document.getElementById('out-'+key);
+  const copy=document.getElementById('copy-'+key);
+  // refresh grant from inputs each run
+  workspace.grant = gatherGrant();
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Working…'; out.textContent='';
+  try{
+    const r=await fetch('/.netlify/functions/agent-run',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({agent:key,input:inputFor(key),workspace})});
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||'Agent failed');
+    // store handoff
+    if(a.stores){
+      if(key==='scout' && Array.isArray(data.parsed) && data.parsed.length){
+        workspace.grant = {...workspace.grant, ...data.parsed[0]};
+        // reflect first result into inputs if empty
+        if(!document.getElementById('w_grant').value) document.getElementById('w_grant').value=data.parsed[0].name||'';
+        if(!document.getElementById('w_funder').value) document.getElementById('w_funder').value=data.parsed[0].funder||'';
+      } else {
+        workspace[a.stores]=data.text;
+      }
+    }
+    out.innerHTML = prettyParsed(key,data.parsed,data.text);
+    copy.style.display='inline-block';
+    copy.onclick=()=>{navigator.clipboard.writeText(out.innerText);copy.textContent='Copied';setTimeout(()=>copy.textContent='Copy',1300);};
+    renderStat();
+  }catch(e){
+    out.innerHTML=`<span class="err">${e.message}</span>`;
+  }finally{
+    btn.disabled=false; btn.textContent='Run agent';
+  }
+}
+
+document.querySelectorAll('[data-agent]').forEach(b=>b.onclick=()=>runAgent(b.dataset.agent));
+
+// ---- Tabs ----
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.tab).classList.add('active');
+});
+
+// ---- Module 5: Impact Tracker ----
+const METRICS=[
+  {key:"veterans_housed",label:"Veterans Housed",desc:"Total placed into housing",unit:"veterans"},
+  {key:"retention_rate",label:"Housing Retention",desc:"Still housed at period end",unit:"%"},
+  {key:"employment_placements",label:"Employment Placements",desc:"Secured employment",unit:"placements"},
+  {key:"income_increase",label:"Avg. Income Increase",desc:"Per veteran, this period",unit:"$"},
+  {key:"mh_referrals",label:"Mental Health Referrals",desc:"Connected to services",unit:"referrals"},
+  {key:"cost_savings",label:"Cost Savings",desc:"vs. unsheltered / ER baseline",unit:"$"},
+];
+const METRIC_STORE="vcg_impact_metrics";
+function loadMetrics(){try{return JSON.parse(localStorage.getItem(METRIC_STORE))||{}}catch{return{}}}
+function saveMetrics(m){try{localStorage.setItem(METRIC_STORE,JSON.stringify(m))}catch{}}
+const metricVals=loadMetrics();
+function renderMetrics(){
+  document.getElementById('metricGrid').innerHTML=METRICS.map(m=>`
+    <div class="metric">
+      <div class="mlabel">${m.label}</div>
+      <div class="mdesc">${m.desc}</div>
+      <input type="number" id="m_${m.key}" value="${metricVals[m.key]??''}" placeholder="0"> <span class="unit">${m.unit}</span>
+    </div>`).join('');
+  METRICS.forEach(m=>{
+    document.getElementById('m_'+m.key).oninput=e=>{metricVals[m.key]=e.target.value;saveMetrics(metricVals);};
+  });
+}
+renderMetrics();
+
+document.getElementById('genReport').onclick=async()=>{
+  const btn=document.getElementById('genReport'),out=document.getElementById('reportOut'),err=document.getElementById('reportErr');
+  err.textContent='';out.textContent='';
+  const metrics={};METRICS.forEach(m=>{const v=document.getElementById('m_'+m.key).value;if(v!=='')metrics[m.label]=v+' '+m.unit;});
+  if(!Object.keys(metrics).length){err.textContent='Enter at least one metric first.';return;}
+  const period=(document.getElementById('cadence').value)+' — '+(document.getElementById('periodLabel').value||'(label not set)');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Writing…';
+  try{
+    const r=await fetch('/.netlify/functions/agent-run',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({agent:'impactReport',input:'Write the impact report for this period.',workspace:{metrics,period,grant:gatherGrant()}})});
+    const data=await r.json();if(!r.ok)throw new Error(data.error||'Failed');
+    out.textContent=data.text;
+    const c=document.getElementById('copyReport');c.style.display='inline-block';
+    c.onclick=()=>{navigator.clipboard.writeText(out.innerText);c.textContent='Copied';setTimeout(()=>c.textContent='Copy report',1300);};
+  }catch(e){err.textContent=e.message;}
+  finally{btn.disabled=false;btn.textContent='Generate Impact Report';}
+};
+
+// ---- Module 6: Fundraising Prospector ----
+document.getElementById('findProspects').onclick=async()=>{
+  const btn=document.getElementById('findProspects'),list=document.getElementById('prospectList'),err=document.getElementById('fundErr');
+  err.textContent='';
+  const focus=document.getElementById('fundFocus').value||'corporate sponsors and major donors for veteran housing';
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Searching…';
+  list.innerHTML='<p style="font-style:italic;color:#6a6457">Searching the web for prospects…</p>';
+  try{
+    const r=await fetch('/.netlify/functions/agent-run',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({agent:'prospector',input:'Find funding prospects for: '+focus,workspace:{grant:gatherGrant()}})});
+    const data=await r.json();if(!r.ok)throw new Error(data.error||'Failed');
+    const items=Array.isArray(data.parsed)?data.parsed:[];
+    if(!items.length){list.innerHTML='<p style="font-style:italic;color:#6a6457">No prospects parsed. Try a more specific focus.</p>';}
+    else list.innerHTML=items.map(p=>`<div class="prospect">
+      <div class="ptype">${p.type||''}</div>
+      <h3>${p.name||'(unnamed)'}</h3>
+      <p>${p.why_match||''}</p>
+      <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        ${p.est_capacity?`<span class="cap">${p.est_capacity}</span>`:''}
+        ${p.url?`<a class="link" style="color:var(--olive-deep);text-decoration:underline;text-underline-offset:3px" href="${p.url}" target="_blank" rel="noopener">Source ↗</a>`:''}
+      </div>
+      ${p.approach?`<p style="margin-top:8px"><strong style="font-family:'Fraunces'">Suggested approach:</strong> ${p.approach}</p>`:''}
+    </div>`).join('');
+  }catch(e){list.innerHTML='';err.textContent=e.message;}
+  finally{btn.disabled=false;btn.textContent='Find Prospects';}
+};
+
+document.getElementById('runAll').onclick=async()=>{
+  const btn=document.getElementById('runAll');
+  const err=document.getElementById('pipeErr'); err.textContent='';
+  btn.disabled=true; btn.textContent='Running pipeline…';
+  try{
+    for(const a of AGENTS){
+      btn.textContent=`Running ${a.label}…`;
+      document.getElementById('card-'+a.key).scrollIntoView({behavior:'smooth',block:'center'});
+      await runAgent(a.key);
+    }
+  }catch(e){ err.textContent=e.message; }
+  finally{ btn.disabled=false; btn.textContent='▶ Run Full Pipeline'; }
+};
+</script>
+</body>
+</html>
