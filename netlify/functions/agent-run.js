@@ -4,6 +4,10 @@
 
 const { AGENTS } = require("./agents");
 
+// Current Anthropic model string. Update here if the model is ever retired.
+// Override without code changes by setting ANTHROPIC_MODEL in Netlify env vars.
+const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
+
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
@@ -22,22 +26,24 @@ exports.handler = async (event) => {
   if (!def) return { statusCode: 400, body: JSON.stringify({ error: "Unknown agent: " + agent }) };
 
   // Build context from the shared workspace so agents hand off to each other.
+  // Cap each context piece so later pipeline agents don't blow the token budget.
+  const cap = (s, n) => (typeof s === "string" && s.length > n ? s.slice(0, n) + "\n…[truncated]" : s);
   const ctxParts = [];
   if (workspace.grant) ctxParts.push("SELECTED GRANT:\n" + JSON.stringify(workspace.grant, null, 2));
   if (workspace.metrics) ctxParts.push("TRACKED OUTCOME METRICS:\n" + JSON.stringify(workspace.metrics, null, 2));
   if (workspace.period) ctxParts.push("REPORTING PERIOD: " + workspace.period);
-  if (workspace.eligibility) ctxParts.push("ELIGIBILITY FINDINGS:\n" + workspace.eligibility);
-  if (workspace.research) ctxParts.push("RESEARCH DATA:\n" + workspace.research);
-  if (workspace.impact) ctxParts.push("IMPACT / KPIs:\n" + workspace.impact);
-  if (workspace.proposal) ctxParts.push("CURRENT PROPOSAL DRAFT:\n" + workspace.proposal);
-  if (workspace.budget) ctxParts.push("BUDGET:\n" + workspace.budget);
+  if (workspace.eligibility) ctxParts.push("ELIGIBILITY FINDINGS:\n" + cap(workspace.eligibility, 1500));
+  if (workspace.research) ctxParts.push("RESEARCH DATA:\n" + cap(workspace.research, 2500));
+  if (workspace.impact) ctxParts.push("IMPACT / KPIs:\n" + cap(workspace.impact, 1500));
+  if (workspace.proposal) ctxParts.push("CURRENT PROPOSAL DRAFT:\n" + cap(workspace.proposal, 2500));
+  if (workspace.budget) ctxParts.push("BUDGET:\n" + cap(workspace.budget, 1500));
   const context = ctxParts.length ? "\n\n--- SHARED WORKSPACE CONTEXT ---\n" + ctxParts.join("\n\n") : "";
 
   const userPrompt = `${input || "Proceed using the workspace context."}${context}`;
 
   const reqBody = {
-    model: "claude-sonnet-4-6",
-    max_tokens: 3000,
+    model: MODEL,
+    max_tokens: 2000,
     system: def.system,
     messages: [{ role: "user", content: userPrompt }],
   };
@@ -61,13 +67,17 @@ exports.handler = async (event) => {
 
     let parsed = null;
     if (def.json) {
-      const clean = text.replace(/```json|```/g, "").trim();
-      try {
-        const s = Math.min(...[clean.indexOf("{"), clean.indexOf("[")].filter((i) => i >= 0));
+      const clean = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+      const candidates = [clean.indexOf("{"), clean.indexOf("[")].filter((i) => i >= 0);
+      if (candidates.length) {
+        const s = Math.min(...candidates);
         const isArr = clean[s] === "[";
         const e = isArr ? clean.lastIndexOf("]") : clean.lastIndexOf("}");
-        parsed = JSON.parse(clean.slice(s, e + 1));
-      } catch { parsed = null; }
+        if (e > s) {
+          try { parsed = JSON.parse(clean.slice(s, e + 1)); }
+          catch { parsed = null; }
+        }
+      }
     }
 
     return {
